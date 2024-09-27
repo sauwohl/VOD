@@ -9,6 +9,8 @@ from mmcv.utils import ConfigDict
 from mmdet.core import bbox2roi
 from mmdet.models.builder import HEADS
 from mmfewshot.detection.models.roi_heads.meta_rcnn_roi_head import MetaRCNNRoIHead
+from vfa.voc_emb_map import emb_map
+
 
 
 class VAE(nn.Module):
@@ -26,6 +28,7 @@ class VAE(nn.Module):
             nn.BatchNorm1d(hidden_dim),
             nn.LeakyReLU()
         )
+        # 均值、方差
         self.fc_mu = nn.Linear(hidden_dim, latent_dim)
         self.fc_var = nn.Linear(hidden_dim, latent_dim)
 
@@ -48,12 +51,13 @@ class VAE(nn.Module):
     def decode(self, z: Tensor) -> Tensor:
 
         z = self.decoder_input(z)
-        z_out = self.decoder(z)
+        z_out = self.decoder(z) # 重构输出
         return z_out
 
     def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
+        # 潜在向量、变分特征
         return eps * std + mu, std + mu
 
     def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
@@ -73,14 +77,88 @@ class VAE(nn.Module):
 
         return {'loss_vae': loss}
 
+class CVAE(nn.Module): 
+
+    def __init__(self, 
+                 in_channels: int, 
+                 latent_dim: int, 
+                 hidden_dim: int, 
+                 condition_dim: int) -> None:
+        super(CVAE, self).__init__()
+        
+        self.latent_dim = latent_dim
+
+        self.encoder = nn.Sequential(
+            nn.Linear(in_channels + condition_dim, hidden_dim),  
+            nn.BatchNorm1d(hidden_dim),
+            nn.LeakyReLU()
+        )
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
+        self.fc_var = nn.Linear(hidden_dim, latent_dim)
+
+        self.decoder_input = nn.Linear(latent_dim + condition_dim, hidden_dim) 
+
+        self.decoder = nn.Sequential(
+            nn.Linear(hidden_dim, in_channels),
+            nn.BatchNorm1d(in_channels),
+            nn.Sigmoid()
+        )
+
+    def encode(self, input: Tensor, condition: Tensor) -> List[Tensor]:
+        # 拼接条件和输入
+        condition_input = torch.cat((input, condition), dim=1)  
+        result = self.encoder(condition_input)
+
+        mu = self.fc_mu(result)
+        log_var = self.fc_var(result)
+
+        return [mu, log_var]
+
+    def decode(self, z: Tensor, condition: Tensor) -> Tensor:
+        # 拼接条件和潜在向量
+        condition_input = torch.cat((z, condition), dim=1) 
+        z = self.decoder_input(condition_input)
+        z_out = self.decoder(z)
+        return z_out
+
+    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu, std + mu
+
+    def forward(self, input: Tensor, condition: Tensor) -> List[Tensor]:
+        mu, log_var = self.encode(input, condition) 
+        z, z_inv = self.reparameterize(mu, log_var)
+        z_out = self.decode(z, condition) 
+
+        return [z_out, z_inv, input, mu, log_var]
+
+    def loss_function(self, input, rec, mu, log_var, con_emb, kld_weight=0.00025, sem_weight=0.00005) -> dict:
+        recons_loss = F.mse_loss(rec, input)
+
+        kld_loss = torch.mean(-0.5 * torch.sum(1 +
+                              log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+        
+        """  
+        self.support_feat_linear = nn.Linear(2048, 300)
+        rec_300 = self.support_feat_linear(rec)
+        sem_loss = F.cosine_embedding_loss(rec_300, con_emb, torch.ones(rec.size(0)).to(input.device))
+        """
+
+        loss = recons_loss + kld_weight * kld_loss
+        # + sem_weight * sem_loss
+        return {'loss_cvae': loss} 
+    
+
 
 @HEADS.register_module()
 class VFARoIHead(MetaRCNNRoIHead):
 
-    def __init__(self, vae_dim=2048, *args, **kargs) -> None:
+    def __init__(self, vae_dim=2048, word_dim=300,*args, **kargs) -> None:
         super().__init__(*args, **kargs)
 
-        self.vae = VAE(vae_dim, vae_dim, vae_dim)
+        #self.vae = VAE(vae_dim, vae_dim, vae_dim)
+        self.cvae = CVAE(vae_dim, vae_dim, vae_dim, word_dim) # 应该多少维？
 
     def _bbox_forward_train(self, query_feats: List[Tensor],
                             support_feats: List[Tensor],
@@ -116,16 +194,39 @@ class VFARoIHead(MetaRCNNRoIHead):
         query_rois = bbox2roi([res.bboxes for res in sampling_results])
         query_roi_feats = self.extract_query_roi_feat(query_feats, query_rois)
         support_feat = self.extract_support_feats(support_feats)[0]
-        support_feat_rec, support_feat_inv, _, mu, log_var = self.vae(
-            support_feat)
 
+        """
+       
+
+        # 类名
+        class_names = 
+        class_emb = torch.tensor(glove[class_names], device=support_gt_labels.device)
+        """
+        # 获得类嵌入
+        class_indices = [int(label.item()) for label in support_gt_labels]
+        # support_class_emb = torch.tensor([emb_map[idx] for idx in class_indices])
+        support_class_emb = torch.stack(
+            [torch.tensor(emb_map[idx], device=support_gt_labels[i].device) for i, idx in enumerate(class_indices)]
+        )
+
+        # 定义全连接层，将300维的类名嵌入映射到2048维
+        #self.fc = nn.Linear(300, 2048)
+
+        # 获取word2vec嵌入（假设为300维），并通过全连接层映射
+        #class_name_embedding = self.fc(word2vec_embedding)
+        # print(support_class_emb[0])
+
+        support_feat_rec, support_feat_inv, _, mu, log_var = self.cvae(
+            support_feat, support_class_emb)
+        
         bbox_targets = self.bbox_head.get_targets(sampling_results,
                                                   query_gt_bboxes,
                                                   query_gt_labels,
                                                   self.train_cfg)
         (labels, label_weights, bbox_targets, bbox_weights) = bbox_targets
         loss_bbox = {'loss_cls': [], 'loss_bbox': [], 'acc': []}
-        batch_size = len(query_img_metas)
+         # 4
+        batch_size = len(query_img_metas)//4
         num_sample_per_imge = query_roi_feats.size(0) // batch_size
         bbox_results = None
         for img_id in range(batch_size):
@@ -168,9 +269,9 @@ class VFARoIHead(MetaRCNNRoIHead):
                 torch.ones_like(meta_cls_labels))
             loss_bbox.update(loss_meta_cls)
 
-        loss_vae = self.vae.loss_function(
-            support_feat, support_feat_rec, mu, log_var)
-        loss_bbox.update(loss_vae)
+        loss_cvae = self.cvae.loss_function(
+            support_feat, support_feat_rec, mu, log_var, support_class_emb)
+        loss_bbox.update(loss_cvae)
 
         bbox_results.update(loss_bbox=loss_bbox)
         return bbox_results
@@ -237,8 +338,10 @@ class VFARoIHead(MetaRCNNRoIHead):
         num_classes = self.bbox_head.num_classes
         for class_id in support_feats_dict.keys():
             support_feat = support_feats_dict[class_id]
-            support_feat_rec, support_feat_inv, _, mu, log_var = self.vae(
-                support_feat)
+            support_class_emb = torch.stack([torch.tensor(emb_map[class_id], device=support_feat.device)])
+
+            support_feat_rec, support_feat_inv, _, mu, log_var = self.cvae(
+                support_feat, support_class_emb)
             bbox_results = self._bbox_forward(
                 query_roi_feats, support_feat_inv.sigmoid())
             cls_scores_dict[class_id] = \
