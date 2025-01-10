@@ -19,12 +19,12 @@ data = dict(
     test=dict(classes='ALL_CLASSES_SPLIT2'),
     model_init=dict(classes='ALL_CLASSES_SPLIT2'))
 evaluation = dict(
-    interval=800, class_splits=['BASE_CLASSES_SPLIT2', 'NOVEL_CLASSES_SPLIT2'])
-checkpoint_config = dict(interval=800)
+    interval=2000, class_splits=['BASE_CLASSES_SPLIT2', 'NOVEL_CLASSES_SPLIT2'])
+checkpoint_config = dict(interval=2000)
 optimizer = dict(lr=0.001)
 lr_config = dict(warmup=None)
-runner = dict(max_iters=800)
-load_from = 'work_dirs/vfa_r101_c4_8xb4_voc-split2_base-training/iter_18000.pth'
+runner = dict(max_iters=2000)
+load_from = 'work_dirs/vfa_r101_c4_8xb4_voc-split1_base-training/iter_18000_0718.pth'
 
 # model settings
 model = dict(frozen_parameters=[

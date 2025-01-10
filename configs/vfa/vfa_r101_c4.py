@@ -19,4 +19,4 @@ model = dict(
         type='VFARoIHead',
         shared_head=dict(pretrained=pretrained),
         bbox_head=dict(
-            type='VFABBoxHead', num_classes=20, num_meta_classes=20)))
+            type='VFABBoxHead', num_classes=10, num_meta_classes=10)))

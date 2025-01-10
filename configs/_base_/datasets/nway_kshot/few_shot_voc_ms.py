@@ -43,13 +43,13 @@ test_pipeline = [
         ])
 ]
 # classes splits are predefined in FewShotVOCDataset
-data_root = '../Datasets/voc/VOCdevkit/'
+data_root = '/data/hcx/Datasets/voc/VOCdevkit/'
 data = dict(
     samples_per_gpu=4,
     workers_per_gpu=4,
     train=dict(
         type='NWayKShotDataset',
-        num_support_ways=20,
+        num_support_ways=7,
         num_support_shots=1,
         one_support_shot_per_image=False,
         num_used_support_shots=30,
@@ -60,10 +60,10 @@ data = dict(
                 dict(
                     type='ann_file',
                     ann_file=data_root +
-                    'VOC2007/ImageSets/Main/trainval.txt'),
-                dict(
-                    type='ann_file',
-                    ann_file=data_root + 'VOC2012/ImageSets/Main/trainval.txt')
+                    'VOC2007/ImageSets/Main/val.txt')
+                # dict(
+                #     type='ann_file',
+                #     ann_file=data_root + 'VOC2012/ImageSets/Main/trainval.txt')
             ],
             img_prefix=data_root,
             multi_pipelines=train_multi_pipelines,

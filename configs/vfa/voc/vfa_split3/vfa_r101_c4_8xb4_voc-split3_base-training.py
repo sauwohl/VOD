@@ -14,8 +14,8 @@ data = dict(
     test=dict(classes='BASE_CLASSES_SPLIT3'),
     model_init=dict(classes='BASE_CLASSES_SPLIT3'))
 lr_config = dict(warmup_iters=100, step=[12000, 16000])
-evaluation = dict(interval=3000)
-checkpoint_config = dict(interval=3000)
+evaluation = dict(interval=6000)
+checkpoint_config = dict(interval=6000)
 runner = dict(max_iters=18000)
 optimizer = dict(lr=0.02)
 # model settings
