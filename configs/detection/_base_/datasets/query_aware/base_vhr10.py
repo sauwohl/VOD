@@ -41,7 +41,7 @@ test_pipeline = [
             dict(type='Collect', keys=['img'])
         ])
 ]
-data_root = 'data/NWPU VHR-10 dataset/'
+data_root = '/data/hcx/Datasets/voc/vhr10/NWPU VHR-10 dataset/'
 data = dict(
     samples_per_gpu=2,
     workers_per_gpu=2,

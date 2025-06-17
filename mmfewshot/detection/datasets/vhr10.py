@@ -788,7 +788,8 @@ class FewShotVHR10DefaultDataset(FewShotVHR10Dataset):
             for class_name in VHR10_SPLIT[f'{cls}_SPLIT{split}']
         ]
         for cls in ['ALL_CLASSES', 'BASE_CLASSES', 'NOVEL_CLASSES']
-        for shot in [3, 5, 10, 20] for split in [1, 2]
+        for shot in [1,2,3, 5, 10, 20] for split in [1, 2]
+        
     }
 
     def __init__(self, **kwargs) -> None:

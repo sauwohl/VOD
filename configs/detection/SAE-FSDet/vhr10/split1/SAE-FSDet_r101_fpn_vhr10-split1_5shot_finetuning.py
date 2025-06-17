@@ -10,7 +10,7 @@ exp_version = 'v3'
 # hyper parameters
 split_id = 1
 val_interval = 1000
-train_lr = 0.001
+train_lr = 0.004
 train_warmup_iters = 100
 train_steps = [
     3500,
@@ -42,7 +42,7 @@ load_from = 'work_dirs/SAE-FSDet_r101_fpn_vhr10-split1_base-training/latest.pth'
 
 data = dict(
     samples_per_gpu=4,
-    workers_per_gpu=4,
+    workers_per_gpu=8,
     train=dict(
         ann_cfg=[
             dict(type='ann_file', split=f'SPLIT{split_id}', setting='5SHOT')

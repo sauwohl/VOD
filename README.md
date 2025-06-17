@@ -53,7 +53,7 @@ DIOR<br>
 └──     *.jpg<br>
 
 ### NWPU VHR-10 dataset
-For NWPU VHR-10 dataset, you can download it from [here](https://gcheng-nwpu.github.io/).The original dataset was not divided into training and validation sets. As a result, we uploaded our train/val splits in data/NWPU VHR-10 dataset/Main. The final folder layout should look like this. data<br>
+For NWPU VHR-10 dataset, you can download it from [here](https://gcheng-nwpu.github.io/).The original dataset was not divided into training and validation sets. As a result, we uploaded our train/val splits in /data/hcx/Datasets/voc/vhr10/NWPU VHR-10 dataset/Main. The final folder layout should look like this. data<br>
 NWPU VHR-10 dataset<br>
 ├── ground truth<br>
 ├── Main<br>
