@@ -1,1 +1,0 @@
-/data/hcx/SAE-FSDet/work_dirs/SAE-FSDet_r101_fpn_vhr10-split2_1shot_finetuning/SAE-FSDet_r101_fpn_vhr10-split2_1shot_finetuning.py

@@ -298,12 +298,12 @@ log_config = dict(
     ])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-load_from = 'work_dirs/SAE-FSDet_r101_fpn_dior-split1_base-training/latest.pth'
+load_from = 'work_dirs/VOD_r101_fpn_dior-split1_base-training/latest.pth'
 resume_from = None
 workflow = [('train', 1)]
 use_infinite_sampler = False
 seed = 42
 exp_doc = 'resnet101 + FPN + Gradual RPN + RCNN'
 rpn_weight = 0.7
-work_dir = './work_dirs/SAE-FSDet_r101_fpn_dior-split1_10shot_finetuning'
+work_dir = './work_dirs/VOD_r101_fpn_dior-split1_10shot_finetuning'
 gpu_ids = [0]

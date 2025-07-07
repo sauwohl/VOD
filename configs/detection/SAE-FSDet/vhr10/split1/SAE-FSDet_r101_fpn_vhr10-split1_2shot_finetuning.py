@@ -26,7 +26,7 @@ log_config = dict(
         dict(
             type='MMfewshotWandbHook',
             init_kwargs={
-                'project': 'SAE-FSDet',
+                'project': 'VOD',
                 'name': '{{ fileBasenameNoExtension }}',
                 'notes': exp_doc,
             },
@@ -37,7 +37,7 @@ log_config = dict(
             bbox_score_thr=0.3)
     ])
 
-load_from = 'work_dirs/SAE-FSDet_r101_fpn_vhr10-split1_base-training/latest.pth'
+load_from = 'work_dirs/VOD_r101_fpn_vhr10-split1_base-training/latest.pth'
 # endregion
 
 data = dict(
